@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+enum StateError: Error {
+  case valueError(String)
+}
+
 struct ContentView: View {
 
   @State private var countries = [
@@ -18,19 +22,44 @@ struct ContentView: View {
   @State private var showingScore = false
   @State private var scoreTitle = ""
 
+  @State private var score = 0
+
+  @State private var round = 1
+  let maxRounds = 8
+
+  @State private var showingEnd = false
+  @State private var endText = ""
+
   func flagTapped(_ number: Int) {
+
     if number == correctAnswer {
       scoreTitle = "Correct"
+      score += 1
     } else {
-      scoreTitle = "Incorrect"
+      scoreTitle = "Incorrect, that was the flag of \(countries[number])"
     }
 
-    showingScore = true
+    if round < maxRounds {
+      showingScore = true
+    } else {
+      endGame()
+    }
+    round += 1
   }
 
   func askQuestion() {
     countries.shuffle()
     correctAnswer = Int.random(in: 0...2)
+  }
+
+  func endGame() {
+    endText = "You got \(score)/\(round) correct!"
+    showingEnd = true
+  }
+
+  func reset() {
+    score = 0
+    round = 1
   }
 
   var body: some View {
@@ -77,12 +106,23 @@ struct ContentView: View {
         .alert(scoreTitle, isPresented: $showingScore) {
           Button("Continue", action: askQuestion)
         } message: {
-          Text("Your score is ????")
+          Text("Your score is \(score)")
+        }
+
+        .alert("Good Job!", isPresented: $showingEnd) {
+          Button(
+            "Restart",
+            action: {
+              reset()
+              askQuestion()
+            })
+        } message: {
+          Text(endText)
         }
 
         Spacer()
         Spacer()
-        Text("Score: ???")
+        Text("Score: \(score) / \(round - 1)")
           .foregroundStyle(.white)
           .font(.title.bold())
         Spacer()
